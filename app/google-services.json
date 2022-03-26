@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "334785695416",
+    "project_id": "map-login-57509",
+    "storage_bucket": "map-login-57509.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:334785695416:android:e1b64f335f2cbddbbdae4d",
+        "android_client_info": {
+          "package_name": "com.example.cameraxtest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "334785695416-229e53dv27av20l4r1ri8vhm0m4tupn6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxd21cTrbYHYDouNbe7fmhzQ9Kxes6hGw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "334785695416-229e53dv27av20l4r1ri8vhm0m4tupn6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

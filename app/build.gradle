@@ -2,6 +2,8 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'com.google.gms.google-services'
+    id 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin'
+
 }
 
 android {
@@ -38,7 +40,7 @@ android {
 }
 
 dependencies {
-
+    implementation 'com.google.android.gms:play-services-maps:17.0.1'
     implementation platform('com.google.firebase:firebase-bom:29.2.1')
     implementation 'com.google.firebase:firebase-auth-ktx'
     implementation 'androidx.core:core-ktx:1.7.0'

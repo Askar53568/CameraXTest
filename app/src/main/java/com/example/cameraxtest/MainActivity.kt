@@ -99,30 +99,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         dbReference.updateChildren(childUpdates)
 
     }
-        /*
-        userRef.addValueEventListener(object : ValueEventListener {
-             override fun onValueChange(dataSnapshot: DataSnapshot) {
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
-                val map = dataSnapshot.value as Map<String, Any>?
-
-
-                //val value = dataSnapshot.getValue<String>()
-                Log.d(ContentValues.TAG, "Value is: ${map}")
-            }
-
-            override fun onDataChange(snapshot: DataSnapshot) {
-                TODO("Not yet implemented")
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                // Failed to read value
-                Log.w(ContentValues.TAG, "Failed to read value.", error.toException())
-            }
-        })
-    }
-
-         */
 
     /*
     private fun writeNewUser(username: String, favourite: String) {
@@ -155,60 +131,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         )
 
         dbReference.updateChildren(childUpdates)
-    }
-
-    private fun listenerPOI(){
-        dbReference = firebaseDatabase.reference
-        dbReference = dbReference.child("POIs")
-        val childEventListener = object : ChildEventListener {
-            override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
-                Log.d(TAG, "onChildAdded:" + dataSnapshot.key!!)
-
-                // A new comment has been added, add it to the displayed list
-                val PoI = dataSnapshot.getValue<PoI>()
-                Log.d(ContentValues.TAG, "Value is: ${PoI}")
-                // ...
-            }
-
-            override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
-                Log.d(TAG, "onChildChanged: ${dataSnapshot.key}")
-
-                // A comment has changed, use the key to determine if we are displaying this
-                // comment and if so displayed the changed comment.
-                val newComment = dataSnapshot.getValue<PoI>()
-                val commentKey = dataSnapshot.key
-
-                // ...
-            }
-
-            override fun onChildRemoved(dataSnapshot: DataSnapshot) {
-                Log.d(TAG, "onChildRemoved:" + dataSnapshot.key!!)
-
-                // A comment has changed, use the key to determine if we are displaying this
-                // comment and if so remove it.
-                val commentKey = dataSnapshot.key
-
-                // ...
-            }
-
-            override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {
-                Log.d(TAG, "onChildMoved:" + dataSnapshot.key!!)
-
-                // A comment has changed position, use the key to determine if we are
-                // displaying this comment and if so move it.
-                val movedComment = dataSnapshot.getValue<PoI>()
-                val commentKey = dataSnapshot.key
-
-                // ...
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {
-                Log.w(TAG, "postComments:onCancelled", databaseError.toException())
-                Toast.makeText(this@MainActivity, "Failed to load comments.",
-                    Toast.LENGTH_SHORT).show()
-            }
-        }
-        dbReference.addChildEventListener(childEventListener)
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -249,25 +171,15 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 mMap.addMarker(MarkerOptions().position(poi.location).title(poi.name))
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(poi.location,14f))
-
-                // ...
             }
 
             override fun onChildRemoved(dataSnapshot: DataSnapshot) {
                 Log.d(TAG, "onChildRemoved:" + dataSnapshot.key!!)
-
-                // A comment has changed, use the key to determine if we are displaying this
-                // comment and if so remove it.
-
-                // ...
             }
 
             override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {
                 Log.d(TAG, "onChildMoved:" + dataSnapshot.key!!)
 
-                // A comment has changed position, use the key to determine if we are
-                // displaying this comment and if so move it.
-                // ...
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
@@ -277,9 +189,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
         dbReference.addChildEventListener(childEventListener)
-//        val gymn56 = LatLng(43.247640, 76.948282)
-//        mMap.addMarker(MarkerOptions().position(gymn56).title("Marker in Gymnasium 56"))
-//
-//        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(gymn56,14f))
+
     }
 }

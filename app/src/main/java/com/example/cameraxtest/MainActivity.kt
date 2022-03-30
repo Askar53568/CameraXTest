@@ -15,6 +15,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
@@ -22,13 +23,14 @@ import com.google.firebase.database.ktx.getValue
 import java.util.*
 
 
-class MainActivity : AppCompatActivity(), OnMapReadyCallback {
+class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
     //Maps
     private lateinit var mMap: GoogleMap
     private lateinit var listView: ListView
     private lateinit var binding: ActivityMainBinding
     private lateinit var POIs : MutableList<PoI>
+    private lateinit var marker: Marker
 
     private lateinit var auth: FirebaseAuth
 
@@ -72,8 +74,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             startActivity(intent)
         }
         executeDatabase()
-        writeNewPOI("Koktobe", LatLng(43.242013, 76.959379), "description")
-        writeNewPOI("Swansea Uni", LatLng(51.619174, -3.880502), "uni")
+        writeNewPOI("Swansea Uni", LatLng(51.619174, -3.880502), "Swansea University is a research-led university that has been making a difference since 1920. The University community thrives on exploration and discovery, and offers the right balance of excellent teaching and research, matched by an enviable quality of life.")
+        writeNewPOI("Bayfield Hospital", LatLng(51.624194, -3.877372), "hospital")
     }
     private fun executeMap(){
         val mapFragment = supportFragmentManager
@@ -99,27 +101,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         dbReference.updateChildren(childUpdates)
 
     }
-
-    /*
-    private fun writeNewUser(username: String, favourite: String) {
-        val key = dbReference.child("users").push().key
-        if (key == null) {
-            Log.w(TAG, "Couldn't get push key for users")
-            return
-        }
-
-        val user = UserInfo(username, favourite)
-        val userValues = user.toMap()
-
-        val childUpdates = hashMapOf<String, Any>(
-            "/posts/$key" to userValues,
-            "/user-posts/$username/$key" to userValues
-        )
-
-        dbReference.updateChildren(childUpdates)
-    }
-
-     */
 
     private fun writeNewUserAuth(favourites: List<String>) {
         val user = FirebaseAuth.getInstance().currentUser!!
@@ -150,7 +131,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     dataSnapshot.child("description").getValue<String>()!!
                 )
 
-                mMap.addMarker(MarkerOptions().position(poi.location).title(poi.name))
+                mMap.addMarker(MarkerOptions().position(poi.location).title(poi.name)).setTag(poi.uuid)
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(poi.location,14f))
                 // A new comment has been added, add it to the displayed list
             }
@@ -175,6 +156,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
             override fun onChildRemoved(dataSnapshot: DataSnapshot) {
                 Log.d(TAG, "onChildRemoved:" + dataSnapshot.key!!)
+                //Toast.makeText(this@MainActivity, "POI removed", Toast.LENGTH_LONG)
             }
 
             override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {
@@ -184,11 +166,19 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
             override fun onCancelled(databaseError: DatabaseError) {
                 Log.w(TAG, "postComments:onCancelled", databaseError.toException())
-                Toast.makeText(this@MainActivity, "Failed to load comments.",
-                    Toast.LENGTH_SHORT).show()
             }
         }
         dbReference.addChildEventListener(childEventListener)
 
+        mMap.setOnMarkerClickListener(this)
+
+    }
+
+    override fun onMarkerClick(marker: Marker): Boolean {
+        val intent = Intent(this, PoIActivity::class.java)
+        intent.putExtra("uuid", marker.tag.toString())
+        startActivity(intent)
+        finish()
+        return false;
     }
 }

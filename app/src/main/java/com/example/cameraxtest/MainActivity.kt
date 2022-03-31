@@ -74,8 +74,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             startActivity(intent)
         }
         executeDatabase()
-        writeNewPOI("Swansea Uni", LatLng(51.619174, -3.880502), "Swansea University is a research-led university that has been making a difference since 1920. The University community thrives on exploration and discovery, and offers the right balance of excellent teaching and research, matched by an enviable quality of life.")
-        writeNewPOI("Bayfield Hospital", LatLng(51.624194, -3.877372), "hospital")
     }
     private fun executeMap(){
         val mapFragment = supportFragmentManager

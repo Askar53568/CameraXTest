@@ -6,6 +6,8 @@ import android.app.ProgressDialog
 import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -43,8 +45,6 @@ class PoIActivity : AppCompatActivity() {
     private lateinit var storageReference: StorageReference
     private lateinit var targetUUID: String
 
-    private lateinit var storagePOIimageref: StorageReference
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_poi)
@@ -58,17 +58,13 @@ class PoIActivity : AppCompatActivity() {
         //Instantiate storage
         storage = FirebaseStorage.getInstance("gs://map-login-57509.appspot.com")
         storageReference = storage.reference
-
-        storagePOIimageref = storage.getReferenceFromUrl("gs://map-login-57509.appspot.com/images" + targetUUID)
         //Connect the TextView
         detailsTv = findViewById(R.id.details)
         //Connect to the ImageView
         imagePOI = findViewById(R.id.image)
         //Get details of the POI and display them
         envokePOIListener(targetUUID)
-        Glide.with(this@PoIActivity)
-            .load(storagePOIimageref)
-            .into(imagePOI)
+        displayImage()
         //Set the listener for the imageview to be able to change the image
         imagePOI.setOnClickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
@@ -159,12 +155,26 @@ class PoIActivity : AppCompatActivity() {
             imageURI?.let { uploadImage(it) }
         }
     }
-
-    private fun uploadImage(imageUri : Uri){
-        var progressBar : ProgressBar
-        // Create a reference to "mountains.jpg"
+    //Download image from the storage and display it in the image view
+    private fun displayImage(){
+        //Get the reference to the image
         val imagePOIref: StorageReference = storageReference.child("images/"+targetUUID)
-
+        //Set the memory limit so the app doesn't crash when the file is greater than the available memory
+        val ONE_MEGABYTE: Long = 1024 * 1024
+        //Get the byte array from the link
+        imagePOIref.getBytes(ONE_MEGABYTE).addOnSuccessListener {
+            //Decode the byte array
+            var bitmap : Bitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
+            //Display the image in the image view
+            imagePOI.setImageBitmap(bitmap)
+        }.addOnFailureListener {
+            Toast.makeText(this@PoIActivity, "Error downloading image", Toast.LENGTH_SHORT)
+        }
+    }
+    private fun uploadImage(imageUri : Uri){
+        //Set the reference to the image
+        val imagePOIref: StorageReference = storageReference.child("images/"+targetUUID)
+        //Upload image
         var uploadTask = imagePOIref.putFile(imageUri)
 
         // Register observers to listen for when the download is done or if it fails

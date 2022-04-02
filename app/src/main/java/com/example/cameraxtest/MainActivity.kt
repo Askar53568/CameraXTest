@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var listView: ListView
     private lateinit var binding: ActivityMainBinding
     private lateinit var POIs : MutableList<PoI>
-    private lateinit var marker: Marker
+    private lateinit var currentMarker: Marker
 
     private lateinit var auth: FirebaseAuth
 
@@ -164,12 +164,28 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
+        //Zoom in on the current location
+        //Get the reference to the node of the realtime database where the poi details are stored
         dbReference = firebaseDatabase.reference
         dbReference = dbReference.child("POIs")
-        //Get the latest update on location from the fusedLocationProviderClient
         val latlng = LatLng(currentLocation?.latitude!!, currentLocation?.longitude!!)
-        mMap.addMarker(MarkerOptions().position(latlng).title("current location")).setTag("you are here")
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng,14f))
+        drawMarker(latlng)
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentMarker.position,14f))
+        mMap.setOnMarkerDragListener(object: GoogleMap.OnMarkerDragListener{
+            override fun onMarkerDrag(marker: Marker) {
+
+            }
+
+            override fun onMarkerDragStart(p0: Marker) {
+            }
+            override fun onMarkerDragEnd(marker: Marker) {
+                if(currentMarker!=null){
+                    currentMarker.remove()
+                }
+                val newPosition = LatLng(marker.position.latitude, marker.position.longitude)
+                drawMarker(newPosition)
+            }
+        })
         //Display the pois in the realtime database on the map
         val childEventListener = object : ChildEventListener {
             override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
@@ -221,15 +237,35 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 Log.w(TAG, "postComments:onCancelled", databaseError.toException())
             }
         }
+        mMap.setOnMapClickListener(object: GoogleMap.OnMapClickListener{
+            override fun onMapClick(position: LatLng) {
+                if(currentMarker!=null){
+                    currentMarker.remove()
+                }
+                val newPosition = LatLng(position.latitude, position.longitude)
+                drawMarker(newPosition)
+            }
+        })
         dbReference.addChildEventListener(childEventListener)
 
         mMap.setOnMarkerClickListener(this)
 
     }
 
+    private fun drawMarker(position: LatLng) {
+        var marker : MarkerOptions = MarkerOptions().position(position).title("current location")
+        //Set marker to draggable
+        marker.draggable(true)
+        //Add marker to the map
+        currentMarker = mMap.addMarker(marker)
+        currentMarker?.showInfoWindow()
+    }
 
 
     override fun onMarkerClick(marker: Marker): Boolean {
+        if(marker.tag==null){
+            return false
+        }
         val intent = Intent(this, PoIActivity::class.java)
         intent.putExtra("uuid", marker.tag.toString())
         startActivity(intent)

@@ -97,9 +97,13 @@ class PoIActivity : AppCompatActivity() {
         //Create value listener to display the POI description data
         val POIListener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
-                val description = dataSnapshot.getValue<String>()!!
-                //Set the description text as the textview
-                detailsTv.setText(description)
+                if (dataSnapshot.exists()) {
+                    val description = dataSnapshot.getValue<String>()!!
+                    //Set the description text as the textview
+                    detailsTv.setText(description)
+                }else{
+                    return
+                }
             }
 
             override fun onCancelled(databaseError: DatabaseError) {

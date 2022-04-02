@@ -1,15 +1,18 @@
 package com.example.cameraxtest
-import android.content.ContentValues
 import android.content.ContentValues.TAG
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Bundle
 import android.util.Log
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ListView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import com.example.cameraxtest.databinding.ActivityMainBinding
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -27,6 +30,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
     //Maps
     private lateinit var mMap: GoogleMap
+    private var fusedLocationProviderClient: FusedLocationProviderClient?= null
+    private var currentLocation : Location? = null
     private lateinit var listView: ListView
     private lateinit var binding: ActivityMainBinding
     private lateinit var POIs : MutableList<PoI>
@@ -46,7 +51,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         firebaseDatabase = FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
-
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         executeMap()
 
         auth = FirebaseAuth.getInstance()
@@ -75,10 +80,35 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         }
         executeDatabase()
     }
-    private fun executeMap(){
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.map) as SupportMapFragment
-        mapFragment.getMapAsync(this)
+
+    private fun executeMap() {
+        if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
+            !=PackageManager.PERMISSION_GRANTED && (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                    !=PackageManager.PERMISSION_GRANTED)){
+            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION), 1000)
+            return
+        }
+        val task = fusedLocationProviderClient?.lastLocation
+        task?.addOnSuccessListener { location ->
+            if(location!=null){
+                this.currentLocation = location
+                val mapFragment = supportFragmentManager
+                    .findFragmentById(R.id.map) as SupportMapFragment
+                mapFragment.getMapAsync(this)
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when(requestCode){
+            1000-> if(grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                executeMap()
+        }
     }
 
     private fun executeDatabase() {
@@ -116,6 +146,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         mMap = googleMap
         dbReference = firebaseDatabase.reference
         dbReference = dbReference.child("POIs")
+        val latlng = LatLng(currentLocation?.latitude!!, currentLocation?.longitude!!)
+        mMap.addMarker(MarkerOptions().position(latlng).title("current location")).setTag("you are here")
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng,14f))
         val childEventListener = object : ChildEventListener {
             override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
                 Log.d(TAG, "onChildAdded:" + dataSnapshot.key!!)
@@ -130,7 +163,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 )
 
                 mMap.addMarker(MarkerOptions().position(poi.location).title(poi.name)).setTag(poi.uuid)
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(poi.location,14f))
+                //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(poi.location,14f))
                 // A new comment has been added, add it to the displayed list
             }
 

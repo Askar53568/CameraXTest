@@ -17,9 +17,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.getValue
@@ -99,6 +97,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             startActivity(intent)
         }
         executeDatabase()
+        writeNewPOI("Park of The First president", LatLng(43.18559019595884, 76.88532945554309), "just a park")
     }
 
     private fun executeMap() {
@@ -147,7 +146,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             "/POIs/$uuid" to poI
         )
         dbReference.updateChildren(childUpdates)
-
     }
 
     private fun writeNewUserAuth(favourites: List<String>) {
@@ -199,8 +197,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                     ),
                     dataSnapshot.child("description").getValue<String>()!!
                 )
-
-                mMap.addMarker(MarkerOptions().position(poi.location).title(poi.name)).setTag(poi.uuid)
+                var newPoi : MarkerOptions = MarkerOptions().position(poi.location).title(poi.name).icon(BitmapDescriptorFactory.defaultMarker(
+                    BitmapDescriptorFactory.HUE_AZURE))
+                mMap.addMarker(newPoi).setTag(poi.uuid)
                 //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(poi.location,14f))
                 // A new comment has been added, add it to the displayed list
             }
@@ -218,8 +217,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                     ),
                     dataSnapshot.child("description").getValue<String>()!!
                 )
-
-                mMap.addMarker(MarkerOptions().position(poi.location).title(poi.name))
+                var newPoi : MarkerOptions = MarkerOptions().position(poi.location).title(poi.name).icon(BitmapDescriptorFactory.defaultMarker(
+                    BitmapDescriptorFactory.HUE_AZURE))
+                mMap.addMarker(newPoi).setTag(poi.uuid)
+//                mMap.addMarker(MarkerOptions().position(poi.location).title(poi.name))
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(poi.location,14f))
             }
 
@@ -234,9 +235,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
-                Log.w(TAG, "postComments:onCancelled", databaseError.toException())
+                Log.w(TAG, "Cancelled", databaseError.toException())
             }
         }
+        mMap.setOnPoiClickListener(object: GoogleMap.OnPoiClickListener{
+            override fun onPoiClick(poi: PointOfInterest) {
+
+            }
+        })
         mMap.setOnMapClickListener(object: GoogleMap.OnMapClickListener{
             override fun onMapClick(position: LatLng) {
                 if(currentMarker!=null){
@@ -264,7 +270,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
     override fun onMarkerClick(marker: Marker): Boolean {
         if(marker.tag==null){
-            return false
         }
         val intent = Intent(this, PoIActivity::class.java)
         intent.putExtra("uuid", marker.tag.toString())

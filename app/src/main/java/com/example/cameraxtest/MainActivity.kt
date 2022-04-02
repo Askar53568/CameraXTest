@@ -1,4 +1,5 @@
 package com.example.cameraxtest
+
 import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -11,8 +12,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.example.cameraxtest.databinding.ActivityMainBinding
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var mMap: GoogleMap
     private var fusedLocationProviderClient: FusedLocationProviderClient?= null
     private var currentLocation : Location? = null
+    private var locationUpdate : Location? = null
     private lateinit var listView: ListView
     private lateinit var binding: ActivityMainBinding
     private lateinit var POIs : MutableList<PoI>
@@ -46,12 +47,31 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var dbReference: DatabaseReference
     private lateinit var firebaseDatabase: FirebaseDatabase
 
+    //Continous location update
+    private var locationRequest: LocationRequest? = null
+    private var locationCallback: LocationCallback? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         firebaseDatabase = FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+        locationRequest = LocationRequest.create()
+        locationRequest!!.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+        locationRequest!!.setInterval(20 * 1000)
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                super.onLocationResult(locationResult)
+                if(locationResult === null){
+                    return
+                }else{
+                    locationUpdate = locationResult.lastLocation
+                }
+            }
+        }
+        //Remove last location update
+        fusedLocationProviderClient?.removeLocationUpdates(locationCallback as LocationCallback)
         executeMap()
 
         auth = FirebaseAuth.getInstance()
@@ -146,9 +166,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         mMap = googleMap
         dbReference = firebaseDatabase.reference
         dbReference = dbReference.child("POIs")
+        //Get the latest update on location from the fusedLocationProviderClient
         val latlng = LatLng(currentLocation?.latitude!!, currentLocation?.longitude!!)
         mMap.addMarker(MarkerOptions().position(latlng).title("current location")).setTag("you are here")
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latlng,14f))
+        //Display the pois in the realtime database on the map
         val childEventListener = object : ChildEventListener {
             override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
                 Log.d(TAG, "onChildAdded:" + dataSnapshot.key!!)
@@ -187,7 +209,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
             override fun onChildRemoved(dataSnapshot: DataSnapshot) {
                 Log.d(TAG, "onChildRemoved:" + dataSnapshot.key!!)
-                //Toast.makeText(this@MainActivity, "POI removed", Toast.LENGTH_LONG)
+                Toast.makeText(this@MainActivity, "POI removed", Toast.LENGTH_LONG).show()
             }
 
             override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {
@@ -204,6 +226,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         mMap.setOnMarkerClickListener(this)
 
     }
+
+
 
     override fun onMarkerClick(marker: Marker): Boolean {
         val intent = Intent(this, PoIActivity::class.java)

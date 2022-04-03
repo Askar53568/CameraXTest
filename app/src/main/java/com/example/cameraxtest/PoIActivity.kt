@@ -29,6 +29,10 @@ class PoIActivity : AppCompatActivity() {
 
     //Textview for the details of the POI
     private lateinit var detailsTv: TextView
+    //Textview for the details of the POI
+    private lateinit var nameTv: TextView
+    //Edit Button
+    private lateinit var editButton : Button
 
     //ImageView for the POI image
     private lateinit var imagePOI: ImageView
@@ -36,8 +40,6 @@ class PoIActivity : AppCompatActivity() {
     //Camera and Gallery buttons
     private lateinit var galleryButton: Button
     private lateinit var cameraButton: Button
-    //Image URI
-    //private var imageURI: Uri? = null
     //Firebase storage
     private lateinit var storage: FirebaseStorage
     private lateinit var storageReference: StorageReference
@@ -57,14 +59,33 @@ class PoIActivity : AppCompatActivity() {
         //Instantiate storage
         storage = FirebaseStorage.getInstance("gs://map-login-57509.appspot.com")
         storageReference = storage.reference
-        //Connect the TextView
+        //Connect the details TextView
         detailsTv = findViewById(R.id.details)
+        //Connect to the name TextView
+        nameTv = findViewById(R.id.name)
+        //Connnect to the edit button
+        editButton = findViewById(R.id.edit_button)
         //Connect to the ImageView
         imagePOI = findViewById(R.id.image)
         //Get details of the POI and display them
         envokePOIListener(targetUUID)
         displayImage()
         //Set the listener for the imageview to be able to change the image
+        setImageViewListener(imagePOI)
+        //Set the listener for the imageview to be able to edit the POI
+        setEditButtonListener()
+
+    }
+
+    private fun setEditButtonListener(){
+        editButton.setOnClickListener{
+            val intent = Intent(this, AddLocationActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
+    }
+
+    public fun setImageViewListener(imagePOI: ImageView){
         imagePOI.setOnClickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
             {
@@ -85,7 +106,6 @@ class PoIActivity : AppCompatActivity() {
             }
 
         }
-
     }
 
     private fun envokePOIListener(uuid: String) {
@@ -93,35 +113,55 @@ class PoIActivity : AppCompatActivity() {
         dbReference = firebaseDatabase.reference
         //Point at a specific node of the json tree to access the description of the specific POI of UUID ${uuid}
         dbReference = dbReference.child("POIs/${uuid}/description")
+        val nameReference = firebaseDatabase.reference.child("POIs/${uuid}/name")
         //Create value listener to display the POI description data
-        val POIListener = object : ValueEventListener {
+        val DescriptionListener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 if (dataSnapshot.exists()) {
                     val description = dataSnapshot.getValue<String>()!!
+                    val name = dataSnapshot.getValue<String>()!!
+
                     //Set the description text as the textview
-                    detailsTv.setText(description)
+                    detailsTv.text = description
+                    //Set the name for the POI
+                    nameTv.text = name
                 }else{
                     return
                 }
             }
-
             override fun onCancelled(databaseError: DatabaseError) {
                 Toast.makeText(this@PoIActivity, "Failed to load description", Toast.LENGTH_LONG)
                     .show()
             }
         }
+        val NameListener = object : ValueEventListener{
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                 if (dataSnapshot.exists()) {
+                    val name = dataSnapshot.getValue<String>()!!
+                    //Set the name for the POI
+                    nameTv.text = name
+                }else{
+                    return
+                }
+            }
+            override fun onCancelled(databaseError: DatabaseError) {
+                Toast.makeText(this@PoIActivity, "Failed to load name", Toast.LENGTH_LONG)
+                    .show()
+            }
+        }
         //Attach the value listener to the database reference
-        dbReference.addValueEventListener(POIListener)
+        dbReference.addValueEventListener(DescriptionListener)
+        nameReference.addValueEventListener(NameListener)
 
 
     }
 
     companion object {
         //image pick code
-        private val IMAGE_PICK_CODE = 1000
+        public val IMAGE_PICK_CODE = 1000
 
         //Permission code
-        private val PERMISSION_CODE = 1001
+        public val PERMISSION_CODE = 1001
     }
 
     private fun pickImageFromGallery() {

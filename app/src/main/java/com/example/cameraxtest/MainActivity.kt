@@ -31,9 +31,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private var fusedLocationProviderClient: FusedLocationProviderClient?= null
     private var currentLocation : Location? = null
     private var locationUpdate : Location? = null
-    private lateinit var listView: ListView
     private lateinit var binding: ActivityMainBinding
-    private lateinit var POIs : MutableList<PoI>
     private lateinit var currentMarker: Marker
 
     private lateinit var auth: FirebaseAuth
@@ -97,7 +95,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             startActivity(intent)
         }
         executeDatabase()
-        writeNewPOI("Park of The First president", LatLng(43.18559019595884, 76.88532945554309), "just a park")
+        //writeNewPOI("Park of The First president", LatLng(43.18559019595884, 76.88532945554309), "just a park")
     }
 
     private fun executeMap() {
@@ -105,7 +103,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             !=PackageManager.PERMISSION_GRANTED && (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION)
                     !=PackageManager.PERMISSION_GRANTED)){
             ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION), 1000)
-            return
         }
         val task = fusedLocationProviderClient?.lastLocation
         task?.addOnSuccessListener { location ->
@@ -125,15 +122,15 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when(requestCode){
-            1000-> if(grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+            1000-> if(grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 executeMap()
+            }
         }
     }
 
     private fun executeDatabase() {
         dbReference = firebaseDatabase.reference
         dbReference = dbReference.child("users")
-        val myRef = firebaseDatabase.getReference("message")
         val favourites = listOf("Swansea", "Neath")
         writeNewUserAuth(favourites)
     }
@@ -187,7 +184,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         //Display the pois in the realtime database on the map
         val childEventListener = object : ChildEventListener {
             override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
-                Log.d(TAG, "onChildAdded:" + dataSnapshot.key!!)
                 val poi = PoI(
                     dataSnapshot.key!!,
                     dataSnapshot.child("name").getValue<String>()!!,
@@ -270,11 +266,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
     override fun onMarkerClick(marker: Marker): Boolean {
         if(marker.tag==null){
+            return false
         }
         val intent = Intent(this, PoIActivity::class.java)
         intent.putExtra("uuid", marker.tag.toString())
         startActivity(intent)
         finish()
-        return false;
+        return true;
     }
 }

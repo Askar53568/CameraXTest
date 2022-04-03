@@ -9,7 +9,7 @@
         android:id="@+id/name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Name Placeholder"
+        android:text="No name available"
         android:textSize="24dp"
         app:layout_constraintBottom_toTopOf="@id/details"
         app:layout_constraintEnd_toEndOf="parent"
@@ -23,7 +23,7 @@
         android:layout_width="match_parent"
         android:layout_height="400dp"
         android:layout_marginHorizontal="20dp"
-        android:text="Lorem Ipsum is simply dummy text of the printing and typesetting industry."
+        android:text="No description available yet"
         android:textSize="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -36,11 +36,22 @@
         android:layout_height="0dp"
         android:adjustViewBounds="true"
         android:scaleType="centerCrop"
-        android:src="@drawable/ic_launcher_background"
+        android:background="@color/grey"
         app:layout_constraintBottom_toTopOf="@id/name"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+    <Button
+        android:id="@+id/edit_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="@id/name"
+        app:layout_constraintTop_toBottomOf="@id/image"
+        app:layout_constraintStart_toEndOf="@id/name"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="15dp"
+        android:text="Edit">
+    </Button>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

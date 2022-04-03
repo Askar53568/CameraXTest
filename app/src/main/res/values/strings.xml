@@ -4,4 +4,28 @@
     <string name="start_capture">Start Capture</string>
     <string name="stop_capture">Stop Capture</string>
     <string name="take_another">Retake Photo</string>
+    <string name="name_text">Name</string>
+    <string name="location_text">Location</string>
+    <string name="save_text">Save</string>
+    <string name="search_text">Search</string>
+    <string name="email_text">Email</string>
+    <string name="password_text">Password</string>
+    <string name="login_text">Login</string>
+    <string name="sign_up_text">Sign Up</string>
+    <string name="open_text">Open</string>
+    <string name="close_text">Close</string>
+
+    <string name="add_location_tooltip">Add a Location</string>
+    <string name="description_text">Description</string>
+    <string name="add_location_select_current_location_button">SELECT CURRENT LOCATION</string>
+    <string name="add_location_image_button">Add Image</string>
+    <string name="no_locations_found">No locations found. Please add one.</string>
+    <string name="location_image_description">Image of location</string>
+
+    <string name="login_forgot_password">Forgot password?</string>
+    <string name="login_not_registered">Not Registered?</string>
+    <string name="login_bg_content_description">Worcester Cathedral Background Image</string>
+    <string name="text_reset_password">Reset Password</string>
+    <string name="return_to_login">Return to Login Page</string>
+    <string name="nav_bar_sign_out">Sign Out</string>
 </resources>

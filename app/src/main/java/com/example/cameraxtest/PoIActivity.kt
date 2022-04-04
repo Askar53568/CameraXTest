@@ -20,7 +20,7 @@ import com.google.firebase.storage.StorageReference
 import java.util.*
 
 
-class PoIActivity : AppCompatActivity() {
+open class PoIActivity : AppCompatActivity() {
     //Create a database reference
     private lateinit var dbReference: DatabaseReference
 
@@ -71,21 +71,6 @@ class PoIActivity : AppCompatActivity() {
         envokePOIListener(targetUUID)
         displayImage()
         //Set the listener for the imageview to be able to change the image
-        setImageViewListener(imagePOI)
-        //Set the listener for the imageview to be able to edit the POI
-        setEditButtonListener()
-
-    }
-
-    private fun setEditButtonListener(){
-        editButton.setOnClickListener{
-            val intent = Intent(this, AddLocationActivity::class.java)
-            startActivity(intent)
-            finish()
-        }
-    }
-
-    public fun setImageViewListener(imagePOI: ImageView){
         imagePOI.setOnClickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
             {
@@ -106,6 +91,13 @@ class PoIActivity : AppCompatActivity() {
             }
 
         }
+        editButton.setOnClickListener{
+            val intent = Intent(this, AddLocationActivity::class.java)
+            intent.putExtra("uuid", targetUUID)
+            startActivity(intent)
+            finish()
+        }
+
     }
 
     private fun envokePOIListener(uuid: String) {
@@ -158,13 +150,13 @@ class PoIActivity : AppCompatActivity() {
 
     companion object {
         //image pick code
-        public val IMAGE_PICK_CODE = 1000
+        val IMAGE_PICK_CODE = 1000
 
         //Permission code
-        public val PERMISSION_CODE = 1001
+        val PERMISSION_CODE = 1001
     }
 
-    private fun pickImageFromGallery() {
+    public fun pickImageFromGallery() {
         val intent = Intent(Intent.ACTION_PICK)
         intent.type = "image/*"
         intent.setAction(Intent.ACTION_GET_CONTENT)

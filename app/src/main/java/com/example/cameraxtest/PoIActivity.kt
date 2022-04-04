@@ -10,14 +10,12 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.*
-import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import java.util.*
 
 
 open class PoIActivity : AppCompatActivity() {
@@ -50,8 +48,7 @@ open class PoIActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_poi)
         //connect to the database stored at the URL
-        firebaseDatabase =
-            FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
+        firebaseDatabase = FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
         //Get intent passed from the MainActivity.onMarkerClick
         var intent = getIntent()
         //Get the extra from the intent, which is a UUID of the POI
@@ -92,7 +89,7 @@ open class PoIActivity : AppCompatActivity() {
 
         }
         editButton.setOnClickListener{
-            val intent = Intent(this, AddLocationActivity::class.java)
+            val intent = Intent(this, EditLocationActivity::class.java)
             intent.putExtra("uuid", targetUUID)
             startActivity(intent)
             finish()
@@ -181,7 +178,7 @@ open class PoIActivity : AppCompatActivity() {
     }
 
 
-    var resultLauncher = registerForActivityResult(StartActivityForResult()) { result ->
+    private var resultLauncher = registerForActivityResult(StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             // There are no request codes
             val data: Intent? = result.data

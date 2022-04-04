@@ -22,6 +22,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.getValue
 import java.util.*
+import kotlin.concurrent.schedule
 
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
@@ -135,16 +136,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         writeNewUserAuth(favourites)
     }
 
-    private fun writeNewPOI(name: String, location : LatLng, description: String){
-        dbReference = firebaseDatabase.reference
-        val uuid = UUID.randomUUID().toString()
-        val poI = PoI(uuid, name, location, description)
-        val childUpdates = hashMapOf<String, Any>(
-            "/POIs/$uuid" to poI
-        )
-        dbReference.updateChildren(childUpdates)
-    }
-
     private fun writeNewUserAuth(favourites: List<String>) {
         val user = FirebaseAuth.getInstance().currentUser!!
         val uId = user.uid
@@ -216,6 +207,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 var newPoi : MarkerOptions = MarkerOptions().position(poi.location).title(poi.name).icon(BitmapDescriptorFactory.defaultMarker(
                     BitmapDescriptorFactory.HUE_AZURE))
                 mMap.addMarker(newPoi).setTag(poi.uuid)
+
 //                mMap.addMarker(MarkerOptions().position(poi.location).title(poi.name))
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(poi.location,14f))
             }
@@ -239,13 +231,27 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
             }
         })
-        mMap.setOnMapClickListener(object: GoogleMap.OnMapClickListener{
-            override fun onMapClick(position: LatLng) {
+        mMap.setOnMapClickListener { position ->
+            if (currentMarker != null) {
+                currentMarker.remove()
+            }
+            val newPosition = LatLng(position.latitude, position.longitude)
+            drawMarker(newPosition)
+        }
+        mMap.setOnMapLongClickListener(object : GoogleMap.OnMapLongClickListener {
+            override fun onMapLongClick(marker: LatLng) {
                 if(currentMarker!=null){
                     currentMarker.remove()
                 }
-                val newPosition = LatLng(position.latitude, position.longitude)
-                drawMarker(newPosition)
+                    val newPosition = LatLng(marker.latitude, marker.longitude)
+                    drawMarker(newPosition)
+                    var passedLocation: DoubleArray = DoubleArray(2)
+                    passedLocation.set(0, marker.latitude)
+                    passedLocation.set(1, marker.longitude)
+                    val intent = Intent(this@MainActivity, AddLocationActivity::class.java)
+                    intent.putExtra("location", passedLocation)
+                    startActivity(intent)
+                    finish()
             }
         })
         dbReference.addChildEventListener(childEventListener)
@@ -266,12 +272,21 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
     override fun onMarkerClick(marker: Marker): Boolean {
         if(marker.tag==null){
-            return false
+            var passedLocation :DoubleArray = DoubleArray(2)
+            passedLocation.set(0, marker.position.latitude)
+            passedLocation.set(1, marker.position.longitude)
+            val intent = Intent(this, AddLocationActivity::class.java)
+            intent.putExtra("location", passedLocation)
+            startActivity(intent)
+            finish()
+        }else {
+            val intent = Intent(this, PoIActivity::class.java)
+            intent.putExtra("uuid", marker.tag.toString())
+            startActivity(intent)
+            finish()
+            return true;
         }
-        val intent = Intent(this, PoIActivity::class.java)
-        intent.putExtra("uuid", marker.tag.toString())
-        startActivity(intent)
-        finish()
-        return true;
+        return true
     }
+
 }

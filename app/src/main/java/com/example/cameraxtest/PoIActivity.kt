@@ -10,9 +10,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.*
+import androidx.activity.result.ActivityResultCallback
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.storage.FirebaseStorage
@@ -156,11 +156,11 @@ open class PoIActivity : AppCompatActivity() {
         val PERMISSION_CODE = 1001
     }
 
-    public fun pickImageFromGallery() {
+    public open fun pickImageFromGallery() {
         val intent = Intent(Intent.ACTION_PICK)
         intent.type = "image/*"
-        intent.setAction(Intent.ACTION_GET_CONTENT)
-        startActivityForResult(intent, IMAGE_PICK_CODE)
+        intent.action = Intent.ACTION_GET_CONTENT
+        resultLauncher.launch(intent)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -180,16 +180,20 @@ open class PoIActivity : AppCompatActivity() {
         }
     }
 
-    //handle result of picked image
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == Activity.RESULT_OK && requestCode == IMAGE_PICK_CODE){
+
+    var resultLauncher = registerForActivityResult(StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // There are no request codes
+            val data: Intent? = result.data
             var imageURI = data?.data
             imagePOI.setImageURI(imageURI)
             //imagePOI.setImageURI(data?.data)
-            imageURI?.let { uploadImage(it) }
+            imageURI?.let {
+                uploadImage(it)
+            }
         }
     }
+
     //Download image from the storage and display it in the image view
     private fun displayImage(){
         //Get the reference to the image

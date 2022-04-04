@@ -21,7 +21,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import java.util.*
 
-class AddLocationActivity : PoIActivity(){
+class AddLocationActivity : PoIActivity() {
     //ImageView for the POI image
     private lateinit var addImage: ImageView
 
@@ -32,6 +32,7 @@ class AddLocationActivity : PoIActivity(){
 
     //Create a database reference
     private lateinit var dbReference: DatabaseReference
+
     //Connect to the database
     private lateinit var firebaseDatabase: FirebaseDatabase
 
@@ -46,7 +47,8 @@ class AddLocationActivity : PoIActivity(){
 
         addImage = findViewById(R.id.iv_add_image)
         //connect to the database stored at the URL
-        firebaseDatabase = FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
+        firebaseDatabase =
+            FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
         //Get intent passed from the MainActivity.onMarkerClick
         var intent = getIntent()
         //Get the extra from the intent, which is a UUID of the POI
@@ -67,13 +69,34 @@ class AddLocationActivity : PoIActivity(){
                     Toast.LENGTH_LONG
                 ).show()
             } else {
-                editPOI(targetUUID,name,description)
+                editPOI(targetUUID, name, description)
+            }
+        }
+
+        addImage.setOnClickListener {
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+                //permission denied
+                val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+                //show popup to request runtime permission
+                requestPermissions(permissions, IMAGE_PICK_CODE);
+            } else {
+                //permission already granted
+                pickImageFromGallery()
             }
         }
 
 
     }
-    private fun editPOI(uuid: String, name: String, description: String){
+
+    companion object {
+        //image pick code
+        const val IMAGE_PICK_CODE = 1000
+
+        //Permission code
+        val PERMISSION_CODE = 1001
+    }
+
+    private fun editPOI(uuid: String, name: String, description: String) {
         val intentMainActivity = Intent(this, MainActivity::class.java)
         dbReference = firebaseDatabase.reference
         val childUpdates = hashMapOf<String, Any>(
@@ -84,12 +107,12 @@ class AddLocationActivity : PoIActivity(){
             startActivity(intentMainActivity)
             finish()
         }.addOnFailureListener {
-            Toast.makeText(this@AddLocationActivity, "Failure to edit the POI", Toast.LENGTH_LONG).show()
+            Toast.makeText(this@AddLocationActivity, "Failure to edit the POI", Toast.LENGTH_LONG)
+                .show()
             startActivity(intentMainActivity)
             finish()
         }
     }
-
 
 
 }

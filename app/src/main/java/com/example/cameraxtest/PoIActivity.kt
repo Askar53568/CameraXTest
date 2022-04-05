@@ -4,8 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -17,7 +15,6 @@ import com.google.firebase.database.ktx.getValue
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import coil.load
-import com.google.android.gms.maps.model.LatLng
 import java.util.*
 
 
@@ -51,6 +48,8 @@ open class PoIActivity : AppCompatActivity() {
     private lateinit var targetUUID: String
 
 
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_poi)
@@ -65,6 +64,7 @@ open class PoIActivity : AppCompatActivity() {
         } else {
             targetUUID = UUID.randomUUID().toString()
         }
+        pickImageView(findViewById(R.id.image))
         //targetUUID = intent.getStringExtra("uuid")!!
         //Instantiate storage
         storage = FirebaseStorage.getInstance("gs://map-login-57509.appspot.com")
@@ -77,7 +77,7 @@ open class PoIActivity : AppCompatActivity() {
         editButton = findViewById(R.id.edit_button)
         removeButton = findViewById(R.id.remove_button)
         //Connect to the ImageView
-        imagePOI = findViewById(R.id.image)
+//        imagePOI = findViewById(R.id.image)
         //Get details of the POI and display them
         envokePOIListener(targetUUID)
         displayImage(imagePOI)
@@ -100,6 +100,7 @@ open class PoIActivity : AppCompatActivity() {
             }
 
         }
+
         editButton.setOnClickListener {
             val intent = Intent(this, EditLocationActivity::class.java)
             intent.putExtra("uuid", targetUUID)
@@ -112,6 +113,8 @@ open class PoIActivity : AppCompatActivity() {
         }
 
     }
+
+
 
     private fun envokePOIListener(uuid: String) {
         //Actual database reference
@@ -170,7 +173,9 @@ open class PoIActivity : AppCompatActivity() {
         //Permission code
         val PERMISSION_CODE = 1001
     }
-
+    protected fun pickImageView(imageView: ImageView){
+        imagePOI = imageView
+    }
     public open fun pickImageFromGallery() {
         val intent = Intent(Intent.ACTION_PICK)
         intent.type = "image/*"
@@ -204,19 +209,20 @@ open class PoIActivity : AppCompatActivity() {
         if (result.resultCode == Activity.RESULT_OK) {
             val data: Intent? = result.data
             var imageURI = data?.data
-            imagePOI.setImageURI(imageURI)
+            this.imagePOI.setImageURI(imageURI)
             imageURI?.let {
                 uploadImage(it)
             }
         }
     }
 
+
     //Download image from the storage and display it in the image view
     protected fun displayImage(imageView: ImageView) {
         //Get the reference to the image
         val imagePOIref: StorageReference = storageReference.child("images/" + this.targetUUID)
         imagePOIref.downloadUrl.addOnSuccessListener { imageView.load(it) }.addOnFailureListener {
-            Toast.makeText(this@PoIActivity, "Error downloading image", Toast.LENGTH_SHORT)
+            Toast.makeText(this, "Error downloading image", Toast.LENGTH_SHORT)
         }
     }
 

@@ -20,6 +20,7 @@ import com.google.android.gms.maps.model.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.getValue
+import java.util.*
 
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
@@ -94,7 +95,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             startActivity(intent)
         }
         executeDatabase()
-        //writeNewPOI("Park of The First president", LatLng(43.18559019595884, 76.88532945554309), "just a park")
     }
 
     private fun executeMap() {
@@ -212,7 +212,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                     )
                 mMap.addMarker(newPoi).setTag(poi.uuid)
 
-//                mMap.addMarker(MarkerOptions().position(poi.location).title(poi.name))
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(poi.location, 14f))
             }
 
@@ -255,6 +254,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 passedLocation.set(1, marker.longitude)
                 val intent = Intent(this@MainActivity, AddLocationActivity::class.java)
                 intent.putExtra("location", passedLocation)
+                val uuid = UUID.randomUUID().toString()
+                intent.putExtra("uuid",uuid)
                 startActivity(intent)
                 finish()
             }
@@ -280,6 +281,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             passedLocation.set(1, marker.position.longitude)
             val intent = Intent(this, AddLocationActivity::class.java)
             intent.putExtra("location", passedLocation)
+            val uuid = UUID.randomUUID().toString()
+            intent.putExtra("uuid",uuid)
             startActivity(intent)
             finish()
         } else {

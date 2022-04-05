@@ -39,6 +39,7 @@ class EditLocationActivity : PoIActivity() {
         setContentView(R.layout.activity_add)
 
         addImage = findViewById(R.id.iv_add_image)
+        pickImageView(addImage)
         //connect to the database stored at the URL
         firebaseDatabase =
             FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
@@ -64,7 +65,6 @@ class EditLocationActivity : PoIActivity() {
                 editPOI(targetUUID, name, description)
             }
         }
-        displayImage(addImage)
         addImage.setOnClickListener {
             if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
                 //permission denied
@@ -76,6 +76,7 @@ class EditLocationActivity : PoIActivity() {
                 pickImageFromGallery()
             }
         }
+        displayImage(addImage)
 
 
     }

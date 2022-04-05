@@ -14,7 +14,6 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import java.util.*
 
 class AddLocationActivity : PoIActivity() {
     //ImageView for the POI image
@@ -43,21 +42,34 @@ class AddLocationActivity : PoIActivity() {
         setContentView(R.layout.activity_add)
 
         addImage = findViewById(R.id.iv_add_image)
+        pickImageView(addImage)
         //connect to the database stored at the URL
         firebaseDatabase =
             FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
         //Get intent passed from the MainActivity.onMarkerClick
         var intent = intent
-        targetUUID = UUID.randomUUID().toString()
         //Get the extra from the intent, which is a UUID of the POI
         passedLocation = intent.getDoubleArrayExtra("location")!!
+        targetUUID = intent.getStringExtra("uuid")!!
 
         location = LatLng(passedLocation.get(0), passedLocation.get(1))
 
         nameEt = findViewById(R.id.et_name)
         descriptionEt = findViewById(R.id.et_description)
         saveButton = findViewById(R.id.btn_save)
+        addImage.setOnClickListener {
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+                //permission denied
+                val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+                //show popup to request runtime permission
+                requestPermissions(permissions, IMAGE_PICK_CODE);
+            } else {
+                //permission already granted
+                pickImageFromGallery()
+            }
+        }
 
+        displayImage(addImage)
         saveButton.setOnClickListener {
             var name: String = nameEt.text.toString()
             var description: String = descriptionEt.text.toString()
@@ -72,19 +84,6 @@ class AddLocationActivity : PoIActivity() {
                 writeNewPOI(name, location, description)
             }
         }
-        displayImage(addImage)
-        addImage.setOnClickListener {
-            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
-                //permission denied
-                val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-                //show popup to request runtime permission
-                requestPermissions(permissions, IMAGE_PICK_CODE);
-            } else {
-                //permission already granted
-                pickImageFromGallery()
-            }
-        }
-
 
     }
 

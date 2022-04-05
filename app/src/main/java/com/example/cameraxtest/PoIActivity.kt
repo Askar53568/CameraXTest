@@ -16,6 +16,8 @@ import com.google.firebase.database.*
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
+import coil.load
+import java.util.*
 
 
 open class PoIActivity : AppCompatActivity() {
@@ -27,10 +29,12 @@ open class PoIActivity : AppCompatActivity() {
 
     //Textview for the details of the POI
     private lateinit var detailsTv: TextView
+
     //Textview for the details of the POI
     private lateinit var nameTv: TextView
+
     //Edit Button
-    private lateinit var editButton : Button
+    private lateinit var editButton: Button
 
     //ImageView for the POI image
     private lateinit var imagePOI: ImageView
@@ -38,6 +42,7 @@ open class PoIActivity : AppCompatActivity() {
     //Camera and Gallery buttons
     private lateinit var galleryButton: Button
     private lateinit var cameraButton: Button
+
     //Firebase storage
     private lateinit var storage: FirebaseStorage
     private lateinit var storageReference: StorageReference
@@ -48,11 +53,17 @@ open class PoIActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_poi)
         //connect to the database stored at the URL
-        firebaseDatabase = FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
+        firebaseDatabase =
+            FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
         //Get intent passed from the MainActivity.onMarkerClick
         var intent = getIntent()
         //Get the extra from the intent, which is a UUID of the POI
-        targetUUID = intent.getStringExtra("uuid")!!
+        if (intent.getStringExtra("uuid") != null) {
+            targetUUID = intent.getStringExtra("uuid")!!
+        } else {
+            targetUUID = UUID.randomUUID().toString()
+        }
+        //targetUUID = intent.getStringExtra("uuid")!!
         //Instantiate storage
         storage = FirebaseStorage.getInstance("gs://map-login-57509.appspot.com")
         storageReference = storage.reference
@@ -66,13 +77,11 @@ open class PoIActivity : AppCompatActivity() {
         imagePOI = findViewById(R.id.image)
         //Get details of the POI and display them
         envokePOIListener(targetUUID)
-        displayImage()
+        displayImage(imagePOI)
         //Set the listener for the imageview to be able to change the image
         imagePOI.setOnClickListener {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-            {
-                if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED)
-                {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
                     //permission denied
                     val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
                     //show popup to request runtime permission
@@ -88,7 +97,7 @@ open class PoIActivity : AppCompatActivity() {
             }
 
         }
-        editButton.setOnClickListener{
+        editButton.setOnClickListener {
             val intent = Intent(this, EditLocationActivity::class.java)
             intent.putExtra("uuid", targetUUID)
             startActivity(intent)
@@ -114,25 +123,27 @@ open class PoIActivity : AppCompatActivity() {
                     detailsTv.text = description
                     //Set the name for the POI
                     nameTv.text = name
-                }else{
+                } else {
                     return
                 }
             }
+
             override fun onCancelled(databaseError: DatabaseError) {
                 Toast.makeText(this@PoIActivity, "Failed to load description", Toast.LENGTH_LONG)
                     .show()
             }
         }
-        val NameListener = object : ValueEventListener{
+        val NameListener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
-                 if (dataSnapshot.exists()) {
+                if (dataSnapshot.exists()) {
                     val name = dataSnapshot.getValue<String>()!!
                     //Set the name for the POI
                     nameTv.text = name
-                }else{
+                } else {
                     return
                 }
             }
+
             override fun onCancelled(databaseError: DatabaseError) {
                 Toast.makeText(this@PoIActivity, "Failed to load name", Toast.LENGTH_LONG)
                     .show()
@@ -160,16 +171,20 @@ open class PoIActivity : AppCompatActivity() {
         resultLauncher.launch(intent)
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when(requestCode){
+        when (requestCode) {
             PERMISSION_CODE -> {
-                if (grantResults.size >0 && grantResults[0] ==
-                    PackageManager.PERMISSION_GRANTED){
+                if (grantResults.size > 0 && grantResults[0] ==
+                    PackageManager.PERMISSION_GRANTED
+                ) {
                     //permission from popup granted
                     pickImageFromGallery()
-                }
-                else{
+                } else {
                     //permission from popup denied
                     Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
                 }
@@ -180,11 +195,9 @@ open class PoIActivity : AppCompatActivity() {
 
     private var resultLauncher = registerForActivityResult(StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            // There are no request codes
             val data: Intent? = result.data
             var imageURI = data?.data
             imagePOI.setImageURI(imageURI)
-            //imagePOI.setImageURI(data?.data)
             imageURI?.let {
                 uploadImage(it)
             }
@@ -192,24 +205,17 @@ open class PoIActivity : AppCompatActivity() {
     }
 
     //Download image from the storage and display it in the image view
-    private fun displayImage(){
+    private fun displayImage(imageView: ImageView) {
         //Get the reference to the image
-        val imagePOIref: StorageReference = storageReference.child("images/"+targetUUID)
-        //Set the memory limit so the app doesn't crash when the file is greater than the available memory
-        val ONE_MEGABYTE: Long = 1024 * 1024
-        //Get the byte array from the link
-        imagePOIref.getBytes(ONE_MEGABYTE).addOnSuccessListener {
-            //Decode the byte array
-            var bitmap : Bitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
-            //Display the image in the image view
-            imagePOI.setImageBitmap(bitmap)
-        }.addOnFailureListener {
+        val imagePOIref: StorageReference = storageReference.child("images/" + targetUUID)
+        imagePOIref.downloadUrl.addOnSuccessListener { imageView.load(it) }.addOnFailureListener {
             Toast.makeText(this@PoIActivity, "Error downloading image", Toast.LENGTH_SHORT)
         }
     }
-    private fun uploadImage(imageUri : Uri){
+
+    private fun uploadImage(imageUri: Uri) {
         //Set the reference to the image
-        val imagePOIref: StorageReference = storageReference.child("images/"+targetUUID)
+        val imagePOIref: StorageReference = storageReference.child("images/" + targetUUID)
         //Upload image
         var uploadTask = imagePOIref.putFile(imageUri)
 
@@ -218,7 +224,7 @@ open class PoIActivity : AppCompatActivity() {
             Toast.makeText(this@PoIActivity, "Failed to upload", Toast.LENGTH_LONG).show()
         }.addOnSuccessListener { taskSnapshot ->
             Toast.makeText(this@PoIActivity, "Succesful upload", Toast.LENGTH_LONG).show()
-        }.addOnProgressListener{ taskSnapshot ->
+        }.addOnProgressListener { taskSnapshot ->
             val progress = (100.0 * taskSnapshot.bytesTransferred) / taskSnapshot.totalByteCount
             Toast.makeText(this@PoIActivity, "Upload is $progress% done", Toast.LENGTH_LONG).show()
         }.addOnPausedListener {

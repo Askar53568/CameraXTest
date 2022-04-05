@@ -84,9 +84,6 @@ class EditLocationActivity : PoIActivity() {
     companion object {
         //image pick code
         const val IMAGE_PICK_CODE = 1000
-
-        //Permission code
-        val PERMISSION_CODE = 1001
     }
 
     private fun editPOI(uuid: String, name: String, description: String) {

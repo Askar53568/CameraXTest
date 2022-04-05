@@ -7,7 +7,6 @@ import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
-import android.widget.ListView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -21,8 +20,6 @@ import com.google.android.gms.maps.model.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.getValue
-import java.util.*
-import kotlin.concurrent.schedule
 
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
@@ -169,22 +166,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         val latlng = LatLng(currentLocation?.latitude!!, currentLocation?.longitude!!)
         drawMarker(latlng)
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentMarker.position, 14f))
-        mMap.setOnMarkerDragListener(object : GoogleMap.OnMarkerDragListener {
-            override fun onMarkerDrag(marker: Marker) {
 
-            }
-
-            override fun onMarkerDragStart(p0: Marker) {
-            }
-
-            override fun onMarkerDragEnd(marker: Marker) {
-                if (currentMarker != null) {
-                    currentMarker.remove()
-                }
-                val newPosition = LatLng(marker.position.latitude, marker.position.longitude)
-                drawMarker(newPosition)
-            }
-        })
         //Display the pois in the realtime database on the map
         val childEventListener = object : ChildEventListener {
             override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
@@ -197,13 +179,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                     ),
                     dataSnapshot.child("description").getValue<String>()!!
                 )
-                var newPoi: MarkerOptions =
+                val newPoi: MarkerOptions =
                     MarkerOptions().position(poi.location).title(poi.name).icon(
                         BitmapDescriptorFactory.defaultMarker(
                             BitmapDescriptorFactory.HUE_AZURE
                         )
                     )
-                mMap.addMarker(newPoi).setTag(poi.uuid)
+                mMap.addMarker(newPoi).tag = poi.uuid
+
                 //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(poi.location,14f))
                 // A new comment has been added, add it to the displayed list
             }
@@ -284,8 +267,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
     private fun drawMarker(position: LatLng) {
         var marker: MarkerOptions = MarkerOptions().position(position).title("current location")
-        //Set marker to draggable
-        marker.draggable(true)
         //Add marker to the map
         currentMarker = mMap.addMarker(marker)
         currentMarker?.showInfoWindow()

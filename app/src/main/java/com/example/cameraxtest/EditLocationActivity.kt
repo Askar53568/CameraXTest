@@ -43,14 +43,13 @@ class EditLocationActivity : PoIActivity() {
         firebaseDatabase =
             FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
         //Get intent passed from the MainActivity.onMarkerClick
-        var intent = getIntent()
+        var intent = intent
         //Get the extra from the intent, which is a UUID of the POI
         targetUUID = intent.getStringExtra("uuid")!!
 
         nameEt = findViewById(R.id.et_name)
         descriptionEt = findViewById(R.id.et_description)
         saveButton = findViewById(R.id.btn_save)
-
         saveButton.setOnClickListener {
             var name: String = nameEt.text.toString()
             var description: String = descriptionEt.text.toString()
@@ -65,7 +64,7 @@ class EditLocationActivity : PoIActivity() {
                 editPOI(targetUUID, name, description)
             }
         }
-
+        displayImage(addImage)
         addImage.setOnClickListener {
             if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
                 //permission denied
@@ -85,6 +84,7 @@ class EditLocationActivity : PoIActivity() {
         //image pick code
         const val IMAGE_PICK_CODE = 1000
     }
+
 
     private fun editPOI(uuid: String, name: String, description: String) {
         val intentMainActivity = Intent(this, MainActivity::class.java)

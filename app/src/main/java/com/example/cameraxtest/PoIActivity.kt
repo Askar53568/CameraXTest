@@ -17,6 +17,7 @@ import com.google.firebase.database.ktx.getValue
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import coil.load
+import com.google.android.gms.maps.model.LatLng
 import java.util.*
 
 
@@ -35,6 +36,7 @@ open class PoIActivity : AppCompatActivity() {
 
     //Edit Button
     private lateinit var editButton: Button
+    private lateinit var removeButton: Button
 
     //ImageView for the POI image
     private lateinit var imagePOI: ImageView
@@ -73,6 +75,7 @@ open class PoIActivity : AppCompatActivity() {
         nameTv = findViewById(R.id.name)
         //Connnect to the edit button
         editButton = findViewById(R.id.edit_button)
+        removeButton = findViewById(R.id.remove_button)
         //Connect to the ImageView
         imagePOI = findViewById(R.id.image)
         //Get details of the POI and display them
@@ -102,6 +105,10 @@ open class PoIActivity : AppCompatActivity() {
             intent.putExtra("uuid", targetUUID)
             startActivity(intent)
             finish()
+        }
+
+        removeButton.setOnClickListener{
+            removePOI(targetUUID)
         }
 
     }
@@ -205,9 +212,9 @@ open class PoIActivity : AppCompatActivity() {
     }
 
     //Download image from the storage and display it in the image view
-    private fun displayImage(imageView: ImageView) {
+    protected fun displayImage(imageView: ImageView) {
         //Get the reference to the image
-        val imagePOIref: StorageReference = storageReference.child("images/" + targetUUID)
+        val imagePOIref: StorageReference = storageReference.child("images/" + this.targetUUID)
         imagePOIref.downloadUrl.addOnSuccessListener { imageView.load(it) }.addOnFailureListener {
             Toast.makeText(this@PoIActivity, "Error downloading image", Toast.LENGTH_SHORT)
         }
@@ -215,7 +222,7 @@ open class PoIActivity : AppCompatActivity() {
 
     private fun uploadImage(imageUri: Uri) {
         //Set the reference to the image
-        val imagePOIref: StorageReference = storageReference.child("images/" + targetUUID)
+        val imagePOIref: StorageReference = storageReference.child("images/" + this.targetUUID)
         //Upload image
         var uploadTask = imagePOIref.putFile(imageUri)
 
@@ -232,4 +239,16 @@ open class PoIActivity : AppCompatActivity() {
         }
 
     }
+
+    private fun removePOI(uuid: String){
+        val intentMainActivity = Intent(this, MainActivity::class.java)
+        val imagePOIref: StorageReference = storageReference.child("images/" + targetUUID)
+        dbReference = firebaseDatabase.reference
+        dbReference = dbReference.child("/POIs/$uuid")
+        dbReference.removeValue()
+        imagePOIref.delete()
+        startActivity(intentMainActivity)
+        finish()
+    }
+
 }

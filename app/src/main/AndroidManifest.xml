@@ -32,6 +32,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".CommentActivity"/>
+        <activity android:name=".AddCommentActivity"/>
+        <activity android:name=".ListActivity"/>
         <activity android:name=".EditLocationActivity"/>
         <activity android:name=".AddLocationActivity"/>
         <activity android:name=".LoginActivity"/>

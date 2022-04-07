@@ -10,15 +10,22 @@ import android.os.Bundle
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import coil.load
+import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.auth.FirebaseAuth
 import java.util.*
 
 
 open class PoIActivity : AppCompatActivity() {
+    private lateinit var passedLocation: DoubleArray
+    private lateinit var commentsReference: DatabaseReference
+    private lateinit var favReference: DatabaseReference
+
     //Create a database reference
     private lateinit var dbReference: DatabaseReference
 
@@ -46,24 +53,49 @@ open class PoIActivity : AppCompatActivity() {
     private lateinit var storage: FirebaseStorage
     private lateinit var storageReference: StorageReference
     private lateinit var targetUUID: String
-
-
+    private lateinit var toolbar: Toolbar
+    private lateinit var btnFav: ImageView
+    private lateinit var poiName: String
+    private lateinit var poiDescription: String
+    private lateinit var poiLocation: LatLng
+    private lateinit var auth: FirebaseAuth
+    private lateinit var comments: ImageView
+    private var favToggle: Boolean = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_poi)
+
+
+        toolbar = findViewById(R.id.toolbar)
+        //Sets the Tool Bar as a Support Action Bar
+        setSupportActionBar(toolbar)
+        // Adds the back button
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        // Setting the click event to the back button
+        toolbar.setNavigationOnClickListener {
+            onBackPressed()
+        }
         //connect to the database stored at the URL
         firebaseDatabase =
             FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
+        auth = FirebaseAuth.getInstance()
         //Get intent passed from the MainActivity.onMarkerClick
         var intent = getIntent()
         //Get the extra from the intent, which is a UUID of the POI
         if (intent.getStringExtra("uuid") != null) {
             targetUUID = intent.getStringExtra("uuid")!!
         } else {
-            targetUUID = UUID.randomUUID().toString()
+            //Put whatever
         }
+        if (intent.getDoubleArrayExtra("location") != null) {
+            passedLocation = intent.getDoubleArrayExtra("location")!!
+        } else {
+            //Put whatever
+        }
+
+        poiLocation = LatLng(passedLocation[0], passedLocation[1])
         pickImageView(findViewById(R.id.image))
         //targetUUID = intent.getStringExtra("uuid")!!
         //Instantiate storage
@@ -76,44 +108,111 @@ open class PoIActivity : AppCompatActivity() {
         //Connnect to the edit button
         editButton = findViewById(R.id.edit_button)
         removeButton = findViewById(R.id.remove_button)
-        //Connect to the ImageView
-//        imagePOI = findViewById(R.id.image)
+        btnFav = findViewById(R.id.btn_fav)
+        comments = findViewById(R.id.comment_section)
+
         //Get details of the POI and display them
         envokePOIListener(targetUUID)
         displayImage(imagePOI)
         //Set the listener for the imageview to be able to change the image
         imagePOI.setOnClickListener {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
-                    //permission denied
-                    val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-                    //show popup to request runtime permission
-                    requestPermissions(permissions, IMAGE_PICK_CODE);
-                } else {
-                    //permission already granted
-                    pickImageFromGallery()
-                }
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+                //permission denied
+                val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+                //show popup to request runtime permission
+                requestPermissions(permissions, IMAGE_PICK_CODE);
             } else {
-                //system OS is < Marshmallow
-                //pickImageFromGallery()
+                //permission already granted
                 pickImageFromGallery()
             }
 
+        }
+        comments.setOnClickListener{
+            viewComments()
         }
 
         editButton.setOnClickListener {
             val intent = Intent(this, EditLocationActivity::class.java)
             intent.putExtra("uuid", targetUUID)
+            intent.putExtra("location", passedLocation)
             startActivity(intent)
             finish()
         }
 
-        removeButton.setOnClickListener{
+        removeButton.setOnClickListener {
             removePOI(targetUUID)
+        }
+        favReference = firebaseDatabase.reference.child("POIs/$targetUUID/fav")
+
+        //var favToggle = isTrue()
+        btnFav.setOnClickListener {
+            if (favToggle) {
+                btnFav.setImageResource(R.drawable.ic_fav_filled_24)
+                addToFavourites(poiName, poiLocation, poiDescription)
+            } else {
+                btnFav.setImageResource(R.drawable.ic_fav_24)
+                removeFromFavourites(targetUUID)
+            }
+            favToggle = !favToggle
         }
 
     }
 
+    private fun removeFromFavourites(targetUUID: String) {
+        val userUID = auth.currentUser!!.uid
+        var removeFavRef = dbReference.child("favourites/$userUID/$targetUUID")
+        removeFavRef.removeValue()
+        val poiUpdates = hashMapOf<String, Any>(
+            "POIs/$targetUUID/fav" to false
+        )
+        dbReference.updateChildren(poiUpdates).addOnSuccessListener {
+            Toast.makeText(this@PoIActivity, "Removed to favourites", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun addToFavourites(name: String, location: LatLng, description: String) {
+        val intentMainActivity = Intent(this, MainActivity::class.java)
+        dbReference = firebaseDatabase.reference
+        val userUID = auth.currentUser!!.uid
+        val favourite = Favourite(targetUUID, name, location, description)
+        val childUpdates = hashMapOf<String, Any>(
+            "/favourites/$userUID/$targetUUID" to favourite
+        )
+        val poiUpdates = hashMapOf<String, Any>(
+            "POIs/$targetUUID/fav" to true
+        )
+        dbReference.updateChildren(childUpdates).addOnFailureListener {
+            Toast.makeText(this@PoIActivity, "Failure to edit the POI", Toast.LENGTH_LONG)
+                .show()
+        }
+        dbReference.updateChildren(poiUpdates).addOnSuccessListener {
+            Toast.makeText(this@PoIActivity, "Added to favourites", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun isTrue(): Boolean {
+        var fav = false
+        val favListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    fav = dataSnapshot.getValue<Boolean>()!!
+                } else {
+                    return
+                }
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                Toast.makeText(
+                    this@PoIActivity,
+                    "Failed to load favourite value",
+                    Toast.LENGTH_LONG
+                )
+                    .show()
+            }
+        }
+        favReference.addValueEventListener(favListener)
+        return fav
+    }
 
 
     private fun envokePOIListener(uuid: String) {
@@ -127,12 +226,11 @@ open class PoIActivity : AppCompatActivity() {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 if (dataSnapshot.exists()) {
                     val description = dataSnapshot.getValue<String>()!!
-                    val name = dataSnapshot.getValue<String>()!!
-
+                    //Set the description value for the object
+                    poiDescription = description
                     //Set the description text as the textview
                     detailsTv.text = description
-                    //Set the name for the POI
-                    nameTv.text = name
+
                 } else {
                     return
                 }
@@ -149,6 +247,8 @@ open class PoIActivity : AppCompatActivity() {
                     val name = dataSnapshot.getValue<String>()!!
                     //Set the name for the POI
                     nameTv.text = name
+                    //Set the name value for the POI object
+                    poiName = name
                 } else {
                     return
                 }
@@ -173,9 +273,11 @@ open class PoIActivity : AppCompatActivity() {
         //Permission code
         val PERMISSION_CODE = 1001
     }
-    protected fun pickImageView(imageView: ImageView){
+
+    protected fun pickImageView(imageView: ImageView) {
         imagePOI = imageView
     }
+
     public open fun pickImageFromGallery() {
         val intent = Intent(Intent.ACTION_PICK)
         intent.type = "image/*"
@@ -246,15 +348,22 @@ open class PoIActivity : AppCompatActivity() {
 
     }
 
-    private fun removePOI(uuid: String){
+    private fun removePOI(uuid: String) {
         val intentMainActivity = Intent(this, MainActivity::class.java)
         val imagePOIref: StorageReference = storageReference.child("images/" + targetUUID)
         dbReference = firebaseDatabase.reference
         dbReference = dbReference.child("/POIs/$uuid")
         dbReference.removeValue()
         imagePOIref.delete()
+        removeFromFavourites(uuid)
         startActivity(intentMainActivity)
         finish()
+    }
+
+    private fun viewComments(){
+        val intentCommentActivity = Intent(this, CommentActivity::class.java)
+        intentCommentActivity.putExtra("uuid", targetUUID)
+        startActivity(intentCommentActivity)
     }
 
 }

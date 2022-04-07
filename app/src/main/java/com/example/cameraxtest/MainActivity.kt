@@ -10,7 +10,6 @@ import android.view.MenuItem
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
-import android.widget.Toolbar
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -21,16 +20,23 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.*
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.getValue
 import java.util.*
+import kotlin.math.cos
+import kotlin.math.sin
 
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
+    private var randToggle = false
+    private lateinit var randomBtn: ImageView
     private lateinit var favReference: DatabaseReference
 
     //Maps
@@ -84,6 +90,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         //Toggle is ready
         toggle.syncState()
         btnFav = findViewById(R.id.btn_fav)
+        randomBtn = findViewById(R.id.random_location)
 
 
         firebaseDatabase =FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
@@ -144,6 +151,23 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 btnFav.setImageResource(R.drawable.ic_fav_24)
                 displayAllPOIs()
             }
+        }
+        randomBtn.setOnClickListener{
+            randToggle = !randToggle
+            if (randToggle) {
+                randomBtn.setImageResource(R.drawable.ic_baseline_auto_awesome_24)
+            } else {
+                randomBtn.setImageResource(R.drawable.ic_outline_auto_awesome_24)
+            }
+            val randomLocation = getRandomLocation(currentLocation!!, 10000)
+            val newRandom: MarkerOptions =
+                MarkerOptions().position(randomLocation).title("secret").icon(
+                    BitmapDescriptorFactory.defaultMarker(
+                        BitmapDescriptorFactory.HUE_VIOLET
+                    )
+                )
+            mMap.addMarker(newRandom)
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(randomLocation, 14f))
         }
 
         logoutBtn = findViewById(R.id.logout_btn)
@@ -428,6 +452,44 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             return true;
         }
         return true
+    }
+
+    fun getRandomLocation(point: Location, radius: Int): LatLng? {
+        val randomPoints: MutableList<LatLng> = ArrayList()
+        val randomDistances: MutableList<Float> = ArrayList()
+        val myLocation = Location("")
+        myLocation.latitude = point.latitude
+        myLocation.longitude = point.longitude
+
+        //This is to generate 10 random points
+        for (i in 0..9) {
+            val x0 = point.latitude
+            val y0 = point.longitude
+            val random = Random()
+
+            // Convert radius from meters to degrees
+            val radiusInDegrees = (radius / 111000f).toDouble()
+            val u = random.nextDouble()
+            val v = random.nextDouble()
+            val w = radiusInDegrees * Math.sqrt(u)
+            val t = 2 * Math.PI * v
+            val x = w * cos(t)
+            val y = w * sin(t)
+
+            // Adjust the x-coordinate for the shrinking of the east-west distances
+            val new_x = x / cos(y0)
+            val foundLatitude = new_x + x0
+            val foundLongitude = y + y0
+            val randomLatLng = LatLng(foundLatitude, foundLongitude)
+            randomPoints.add(randomLatLng)
+            val l1 = Location("")
+            l1.latitude = randomLatLng.latitude
+            l1.longitude = randomLatLng.longitude
+            randomDistances.add(l1.distanceTo(myLocation))
+        }
+        //Get nearest point to the centre
+        val indexOfNearestPointToCentre = randomDistances.indexOf(Collections.min(randomDistances))
+        return randomPoints[indexOfNearestPointToCentre]
     }
 
 

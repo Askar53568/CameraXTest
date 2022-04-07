@@ -5,6 +5,7 @@
       <map>
         <entry key="..\:/Users/Asus/AndroidStudioProjects/CameraXTest/app/src/main/res/drawable/ic_action_add_24dp.xml" value="0.203" />
         <entry key="..\:/Users/Asus/AndroidStudioProjects/CameraXTest/app/src/main/res/drawable/ic_action_search_24.xml" value="0.203" />
+        <entry key="..\:/Users/Asus/AndroidStudioProjects/CameraXTest/app/src/main/res/drawable/ic_baseline_auto_awesome_24.xml" value="0.233" />
         <entry key="..\:/Users/Asus/AndroidStudioProjects/CameraXTest/app/src/main/res/drawable/ic_fav_24.xml" value="0.124" />
         <entry key="..\:/Users/Asus/AndroidStudioProjects/CameraXTest/app/src/main/res/drawable/ic_fav_filled_24.xml" value="0.2535" />
         <entry key="..\:/Users/Asus/AndroidStudioProjects/CameraXTest/app/src/main/res/drawable/ic_launcher_background.xml" value="0.2445" />
@@ -16,7 +17,7 @@
         <entry key="..\:/Users/Asus/AndroidStudioProjects/CameraXTest/app/src/main/res/layout/activity_forgot_password_activity.xml" value="0.25416666666666665" />
         <entry key="..\:/Users/Asus/AndroidStudioProjects/CameraXTest/app/src/main/res/layout/activity_list_view.xml" value="0.264" />
         <entry key="..\:/Users/Asus/AndroidStudioProjects/CameraXTest/app/src/main/res/layout/activity_login.xml" value="0.25416666666666665" />
-        <entry key="..\:/Users/Asus/AndroidStudioProjects/CameraXTest/app/src/main/res/layout/activity_main.xml" value="0.536" />
+        <entry key="..\:/Users/Asus/AndroidStudioProjects/CameraXTest/app/src/main/res/layout/activity_main.xml" value="0.1" />
         <entry key="..\:/Users/Asus/AndroidStudioProjects/CameraXTest/app/src/main/res/layout/activity_main2.xml" value="0.25416666666666665" />
         <entry key="..\:/Users/Asus/AndroidStudioProjects/CameraXTest/app/src/main/res/layout/activity_main2_bottom_sheet.xml" value="0.25416666666666665" />
         <entry key="..\:/Users/Asus/AndroidStudioProjects/CameraXTest/app/src/main/res/layout/activity_photo_captured.xml" value="0.25416666666666665" />

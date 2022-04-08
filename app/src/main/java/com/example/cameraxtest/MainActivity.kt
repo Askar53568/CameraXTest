@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.MenuItem
 import android.widget.Button
@@ -67,6 +68,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var toggle: ActionBarDrawerToggle
     private lateinit var btnFav: ImageView
     private var favToggle: Boolean = false
+    private var tts: TextToSpeech?= null
 
 
 
@@ -491,6 +493,5 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         val indexOfNearestPointToCentre = randomDistances.indexOf(Collections.min(randomDistances))
         return randomPoints[indexOfNearestPointToCentre]
     }
-
 
 }

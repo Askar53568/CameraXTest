@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
@@ -21,7 +22,7 @@ import com.google.firebase.auth.FirebaseAuth
 import java.util.*
 
 
-open class PoIActivity : AppCompatActivity() {
+open class PoIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var passedLocation: DoubleArray
     private lateinit var commentsReference: DatabaseReference
     private lateinit var favReference: DatabaseReference
@@ -61,11 +62,15 @@ open class PoIActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var comments: ImageView
     private var favToggle: Boolean = false
+    private lateinit var iv_textToSpeech: ImageView
+    private var tts: TextToSpeech? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_poi)
+
+        tts = TextToSpeech(this, this)
 
 
         toolbar = findViewById(R.id.toolbar)
@@ -110,6 +115,15 @@ open class PoIActivity : AppCompatActivity() {
         removeButton = findViewById(R.id.remove_button)
         btnFav = findViewById(R.id.btn_fav)
         comments = findViewById(R.id.comment_section)
+        iv_textToSpeech = findViewById(R.id.text_to_speech)
+
+        iv_textToSpeech.setOnClickListener{
+            if(detailsTv.text.isEmpty()){
+                Toast.makeText(this@PoIActivity, "No text available", Toast.LENGTH_SHORT)
+            }else{
+                speakOut(detailsTv.text.toString())
+            }
+        }
 
         //Get details of the POI and display them
         envokePOIListener(targetUUID)
@@ -156,6 +170,10 @@ open class PoIActivity : AppCompatActivity() {
             favToggle = !favToggle
         }
 
+    }
+
+    private fun speakOut(text: String) {
+        tts!!.speak(text, TextToSpeech.QUEUE_FLUSH, null, "" )
     }
 
     private fun removeFromFavourites(targetUUID: String) {
@@ -366,6 +384,29 @@ open class PoIActivity : AppCompatActivity() {
         val intentCommentActivity = Intent(this, CommentActivity::class.java)
         intentCommentActivity.putExtra("uuid", targetUUID)
         startActivity(intentCommentActivity)
+    }
+
+    override fun onInit(status: Int) {
+        if(status==TextToSpeech.SUCCESS){
+            //Set Language to British
+            val result = tts!!.setLanguage(Locale.UK)
+            if(result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED){
+                Toast.makeText(this@PoIActivity, "The language specified is not supported", Toast.LENGTH_SHORT).show()
+            }
+        }else{
+            Toast.makeText(this@PoIActivity, "Text to speech failed", Toast.LENGTH_SHORT).show()
+        }
+    }
+    //Gets called before the activity will shut down
+    public override fun onDestroy() {
+        //check if text to speech is still operating
+        if( tts!= null){
+            //stop text to speech
+            tts!!.stop()
+            //shut text to speech down
+            tts!!.shutdown()
+        }
+        super.onDestroy()
     }
 
 }

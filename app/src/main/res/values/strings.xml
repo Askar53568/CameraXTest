@@ -32,4 +32,5 @@
     <string name="toggle_favourites_content_description">Favourites</string>
     <string name="comment_hint">Write your comment here</string>
     <string name="your_comment">Your Comment</string>
+    <string name="speech_to_text">Speech To Text</string>
 </resources>

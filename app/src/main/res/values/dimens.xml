@@ -12,5 +12,6 @@
     <dimen name="item_location_circular_image_size">70dp</dimen>
     <dimen name="ic_fav_padding">5dp</dimen>
     <dimen name="toolbar_button_horizontal">10dp</dimen>
+    <dimen name="speech_to_text">30dp</dimen>
 
 </resources>

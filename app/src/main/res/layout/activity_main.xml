@@ -39,6 +39,24 @@
                 android:contentDescription="@string/toggle_favourites_content_description"
                 android:padding="@dimen/ic_fav_padding"
                 android:src="@drawable/ic_outline_auto_awesome_24" />
+            <ImageView
+                android:id="@+id/current_location"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:layout_gravity="end"
+                android:layout_marginHorizontal="@dimen/toolbar_button_horizontal"
+                android:contentDescription="@string/current_location"
+                android:padding="@dimen/ic_fav_padding"
+                android:src="@drawable/ic_baseline_my_location_24" />
+            <ImageView
+                android:id="@+id/send_notification"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:layout_gravity="end"
+                android:layout_marginHorizontal="@dimen/toolbar_button_horizontal"
+                android:contentDescription="@string/current_location"
+                android:padding="@dimen/ic_fav_padding"
+                android:src="@drawable/ic_notification" />
         </androidx.appcompat.widget.Toolbar>
 
 

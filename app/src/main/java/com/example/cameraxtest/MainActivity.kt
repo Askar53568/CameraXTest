@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
-import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.MenuItem
 import android.widget.Button
@@ -29,16 +28,29 @@ import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.getValue
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.launch
+import okhttp3.Dispatcher
+import java.lang.Exception
 import java.util.*
 import kotlin.math.cos
 import kotlin.math.sin
 
+const val TOPIC = "/topics/visited"
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
     private var randToggle = false
     private lateinit var randomBtn: ImageView
     private lateinit var favReference: DatabaseReference
+    private var favList = mutableListOf<String>()
+    private var locationsList = mutableMapOf<LatLng, String>()
+    private var visitedList = mutableListOf<String>()
+
 
     //Maps
     private lateinit var mMap: GoogleMap
@@ -67,8 +79,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private lateinit var toolbarMain: androidx.appcompat.widget.Toolbar
     private lateinit var toggle: ActionBarDrawerToggle
     private lateinit var btnFav: ImageView
+    private lateinit var myLocation: ImageView
+    private lateinit var iv_notification: ImageView
     private var favToggle: Boolean = false
-    private var tts: TextToSpeech?= null
 
 
 
@@ -77,10 +90,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        auth = FirebaseAuth.getInstance()
 
         toolbarMain = findViewById(R.id.toolbarMain)
         drawerLayout = findViewById(R.id.drawerLayout)
         navView = findViewById(R.id.navView)
+        FirebaseMessaging.getInstance().subscribeToTopic(TOPIC)
 
         //Sets the Tool Bar as a Support Action Bar
         setSupportActionBar(toolbarMain)
@@ -91,8 +106,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         drawerLayout.addDrawerListener(toggle)
         //Toggle is ready
         toggle.syncState()
+        //Button for adding favourites
         btnFav = findViewById(R.id.btn_fav)
+        //Button for getting random location
         randomBtn = findViewById(R.id.random_location)
+        //My location button
+        myLocation = findViewById(R.id.current_location)
+        iv_notification = findViewById(R.id.send_notification)
 
 
         firebaseDatabase =FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
@@ -134,7 +154,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             true
         }
 
-        auth = FirebaseAuth.getInstance()
 
         if (auth.currentUser == null) {
             val intent = Intent(this, LoginActivity::class.java)
@@ -142,6 +161,23 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             finish()
         } else {
             Toast.makeText(this, "Already logged in", Toast.LENGTH_LONG).show()
+        }
+
+        iv_notification.setOnClickListener{
+            val title = "Your Favourites are:"
+            var message = ""
+            for (fav in favList){
+                message= message +" "+fav +","
+            }
+            if(title.isNotEmpty() && message.isNotEmpty()){
+                PushNotification(
+                    NotificationData(title, message),
+                    TOPIC
+                ).also{
+                    sendNotification(it)
+                }
+            }
+
         }
 
         btnFav.setOnClickListener {
@@ -154,6 +190,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                 displayAllPOIs()
             }
         }
+
         randomBtn.setOnClickListener{
             randToggle = !randToggle
             if (randToggle) {
@@ -163,13 +200,17 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             }
             val randomLocation = getRandomLocation(currentLocation!!, 10000)
             val newRandom: MarkerOptions =
-                MarkerOptions().position(randomLocation).title("secret").icon(
+                MarkerOptions().position(randomLocation!!).title("secret").icon(
                     BitmapDescriptorFactory.defaultMarker(
                         BitmapDescriptorFactory.HUE_VIOLET
                     )
                 )
             mMap.addMarker(newRandom)
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(randomLocation, 14f))
+        }
+        //Redirects the user back to their current location
+        myLocation.setOnClickListener{
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(currentLocation!!.latitude,currentLocation!!.longitude), 14f))
         }
 
         logoutBtn = findViewById(R.id.logout_btn)
@@ -239,7 +280,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            1000 -> if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            1000 -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 executeMap()
             }
         }
@@ -296,6 +337,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
             }
         })
         displayAllPOIs()
+        findIfVisited()
+        Log.d("Visited locations", visitedList.toString())
 
         mMap.setOnMarkerClickListener(this)
 
@@ -320,7 +363,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                             BitmapDescriptorFactory.HUE_ORANGE
                         )
                     )
-                mMap.addMarker(newFavourite).tag = fav.uuid
+                favList.add(fav.name)
+                mMap.addMarker(newFavourite)!!.tag = fav.uuid
 
             }
 
@@ -342,7 +386,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                             BitmapDescriptorFactory.HUE_ORANGE
                         )
                     )
-                mMap.addMarker(newFavourite).tag = fav.uuid
+                mMap.addMarker(newFavourite)!!.tag = fav.uuid
             }
 
             override fun onChildRemoved(dataSnapshot: DataSnapshot) {
@@ -383,7 +427,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                             BitmapDescriptorFactory.HUE_AZURE
                         )
                     )
-                mMap.addMarker(newPoi).tag = poi.uuid
+                locationsList.put(poi.location, poi.name)
+                mMap.addMarker(newPoi)!!.tag = poi.uuid
 
             }
 
@@ -405,7 +450,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
                             BitmapDescriptorFactory.HUE_AZURE
                         )
                     )
-                mMap.addMarker(newPoi).setTag(poi.uuid)
+                mMap.addMarker(newPoi)!!.setTag(poi.uuid)
 
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(poi.location, 14f))
             }
@@ -430,7 +475,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
     private fun drawMarker(position: LatLng) {
         var marker: MarkerOptions = MarkerOptions().position(position).title("current location")
         //Add marker to the map
-        currentMarker = mMap.addMarker(marker)
+        currentMarker = mMap.addMarker(marker)!!
         currentMarker?.showInfoWindow()
     }
 
@@ -493,5 +538,41 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
         val indexOfNearestPointToCentre = randomDistances.indexOf(Collections.min(randomDistances))
         return randomPoints[indexOfNearestPointToCentre]
     }
+
+    private fun addAdmin(uid : String){
+        val adminConsoleRef = firebaseDatabase.reference
+        val childUpdates = hashMapOf<String, Any>(
+            "/admins" to uid
+        )
+        adminConsoleRef.updateChildren(childUpdates).addOnSuccessListener {
+            Toast.makeText(this@MainActivity, "Admin added", Toast.LENGTH_LONG)
+                .show()
+        }.addOnFailureListener {
+            Toast.makeText(this@MainActivity, "Failure to add admin", Toast.LENGTH_LONG)
+                .show()
+        }
+    }
+    private fun findIfVisited(){
+        for (location in locationsList){
+            val current = LatLng(currentLocation!!.latitude, currentLocation!!.longitude)
+            if(current == location.key){
+                visitedList.add(location.value)
+            }
+        }
+    }
+
+    private fun sendNotification(notification: PushNotification) = CoroutineScope(Dispatchers.IO).launch {
+        try{
+            val response = RetrofitInstance.api.pushNotification(notification)
+            if (response.isSuccessful){
+                //Log.d(TAG, "Response: ${Gson().toJson(response)}")
+            }else{
+                //Log.e(TAG, response.errorBody().toString())
+            }
+        }catch (e:Exception){
+            Log.e(TAG, e.toString())
+        }
+    }
+
 
 }

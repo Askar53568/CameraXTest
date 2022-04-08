@@ -5,9 +5,9 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
+import android.view.View
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AppCompatActivity
@@ -24,7 +24,6 @@ import java.util.*
 
 open class PoIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var passedLocation: DoubleArray
-    private lateinit var commentsReference: DatabaseReference
     private lateinit var favReference: DatabaseReference
 
     //Create a database reference
@@ -45,10 +44,6 @@ open class PoIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     //ImageView for the POI image
     private lateinit var imagePOI: ImageView
-
-    //Camera and Gallery buttons
-    private lateinit var galleryButton: Button
-    private lateinit var cameraButton: Button
 
     //Firebase storage
     private lateinit var storage: FirebaseStorage
@@ -87,7 +82,7 @@ open class PoIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             FirebaseDatabase.getInstance("https://map-login-57509-default-rtdb.europe-west1.firebasedatabase.app/")
         auth = FirebaseAuth.getInstance()
         //Get intent passed from the MainActivity.onMarkerClick
-        var intent = getIntent()
+        val intent = getIntent()
         //Get the extra from the intent, which is a UUID of the POI
         if (intent.getStringExtra("uuid") != null) {
             targetUUID = intent.getStringExtra("uuid")!!
@@ -119,9 +114,20 @@ open class PoIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         iv_textToSpeech.setOnClickListener{
             if(detailsTv.text.isEmpty()){
-                Toast.makeText(this@PoIActivity, "No text available", Toast.LENGTH_SHORT)
+                Toast.makeText(this@PoIActivity, "No text available", Toast.LENGTH_SHORT).show()
             }else{
                 speakOut(detailsTv.text.toString())
+            }
+        }
+
+        firebaseDatabase.reference.child("admins").get().addOnSuccessListener {
+            //If the value exists, user is an admin
+            if (it.value == auth.currentUser!!.uid) {
+                editButton.visibility = View.VISIBLE
+                removeButton.visibility = View.VISIBLE
+            }else{
+                editButton.visibility = View.GONE
+                removeButton.visibility = View.GONE
             }
         }
 
@@ -134,7 +140,7 @@ open class PoIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 //permission denied
                 val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
                 //show popup to request runtime permission
-                requestPermissions(permissions, IMAGE_PICK_CODE);
+                requestPermissions(permissions, IMAGE_PICK_CODE)
             } else {
                 //permission already granted
                 pickImageFromGallery()
@@ -154,7 +160,7 @@ open class PoIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         removeButton.setOnClickListener {
-            removePOI(targetUUID)
+            removePOI()
         }
         favReference = firebaseDatabase.reference.child("POIs/$targetUUID/fav")
 
@@ -190,7 +196,6 @@ open class PoIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun addToFavourites(name: String, location: LatLng, description: String) {
-        val intentMainActivity = Intent(this, MainActivity::class.java)
         dbReference = firebaseDatabase.reference
         val userUID = auth.currentUser!!.uid
         val favourite = Favourite(targetUUID, name, location, description)
@@ -207,30 +212,6 @@ open class PoIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         dbReference.updateChildren(poiUpdates).addOnSuccessListener {
             Toast.makeText(this@PoIActivity, "Added to favourites", Toast.LENGTH_LONG).show()
         }
-    }
-
-    private fun isTrue(): Boolean {
-        var fav = false
-        val favListener = object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    fav = dataSnapshot.getValue<Boolean>()!!
-                } else {
-                    return
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {
-                Toast.makeText(
-                    this@PoIActivity,
-                    "Failed to load favourite value",
-                    Toast.LENGTH_LONG
-                )
-                    .show()
-            }
-        }
-        favReference.addValueEventListener(favListener)
-        return fav
     }
 
 
@@ -297,7 +278,7 @@ open class PoIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         imagePOI = imageView
     }
 
-    public open fun pickImageFromGallery() {
+    protected open fun pickImageFromGallery() {
         val intent = Intent(Intent.ACTION_PICK)
         intent.type = "image/*"
         intent.action = Intent.ACTION_GET_CONTENT
@@ -329,7 +310,7 @@ open class PoIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var resultLauncher = registerForActivityResult(StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data: Intent? = result.data
-            var imageURI = data?.data
+            val imageURI = data?.data
             this.imagePOI.setImageURI(imageURI)
             imageURI?.let {
                 uploadImage(it)
@@ -343,7 +324,7 @@ open class PoIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         //Get the reference to the image
         val imagePOIref: StorageReference = storageReference.child("images/" + this.targetUUID)
         imagePOIref.downloadUrl.addOnSuccessListener { imageView.load(it) }.addOnFailureListener {
-            Toast.makeText(this, "Error downloading image", Toast.LENGTH_SHORT)
+            Toast.makeText(this, "Error downloading image", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -351,7 +332,7 @@ open class PoIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         //Set the reference to the image
         val imagePOIref: StorageReference = storageReference.child("images/" + this.targetUUID)
         //Upload image
-        var uploadTask = imagePOIref.putFile(imageUri)
+        val uploadTask = imagePOIref.putFile(imageUri)
 
         // Register observers to listen for when the download is done or if it fails
         uploadTask.addOnFailureListener {
@@ -367,9 +348,9 @@ open class PoIActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     }
 
-    private fun removePOI(uuid: String) {
+    private fun removePOI() {
         val intentMainActivity = Intent(this, MainActivity::class.java)
-        val imagePOIref: StorageReference = storageReference.child("images/" + targetUUID)
+        val imagePOIref: StorageReference = storageReference.child("images/$targetUUID")
         val removeReference = firebaseDatabase.reference.child("/POIs/$targetUUID")
         removeReference.removeValue()
         val userId = auth.currentUser!!.uid

@@ -33,4 +33,7 @@
     <string name="comment_hint">Write your comment here</string>
     <string name="your_comment">Your Comment</string>
     <string name="speech_to_text">Speech To Text</string>
+    <string name="edit_text">Edit</string>
+    <string name="not_available">Not Available</string>
+    <string name="current_location">Current Location</string>
 </resources>

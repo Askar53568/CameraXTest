@@ -159,13 +159,14 @@ open class PoIActivity : AppCompatActivity() {
     }
 
     private fun removeFromFavourites(targetUUID: String) {
-        val userUID = auth.currentUser!!.uid
-        var removeFavRef = dbReference.child("favourites/$userUID/$targetUUID")
-        removeFavRef.removeValue()
+        val userId = auth.currentUser!!.uid
+        favReference = firebaseDatabase.reference.child("POIs/$targetUUID")
+        val removeFavReference = firebaseDatabase.reference.child("/favourites/$userId/$targetUUID")
+        removeFavReference.removeValue()
         val poiUpdates = hashMapOf<String, Any>(
-            "POIs/$targetUUID/fav" to false
+            "fav" to false
         )
-        dbReference.updateChildren(poiUpdates).addOnSuccessListener {
+        favReference.updateChildren(poiUpdates).addOnSuccessListener {
             Toast.makeText(this@PoIActivity, "Removed to favourites", Toast.LENGTH_LONG).show()
         }
     }
@@ -351,11 +352,12 @@ open class PoIActivity : AppCompatActivity() {
     private fun removePOI(uuid: String) {
         val intentMainActivity = Intent(this, MainActivity::class.java)
         val imagePOIref: StorageReference = storageReference.child("images/" + targetUUID)
-        dbReference = firebaseDatabase.reference
-        dbReference = dbReference.child("/POIs/$uuid")
-        dbReference.removeValue()
+        val removeReference = firebaseDatabase.reference.child("/POIs/$targetUUID")
+        removeReference.removeValue()
+        val userId = auth.currentUser!!.uid
+        val removeFavReference = firebaseDatabase.reference.child("/favourites/$userId/$targetUUID")
+        removeFavReference.removeValue()
         imagePOIref.delete()
-        removeFromFavourites(uuid)
         startActivity(intentMainActivity)
         finish()
     }

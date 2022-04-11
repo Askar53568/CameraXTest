@@ -55,8 +55,8 @@
                     android:layout_height="wrap_content"
                     android:hint="@string/name_text"
                     android:inputType="textCapWords"
-                    android:textColor="@color/secondary_text_color"
-                    android:textColorHint="@color/secondary_text_color"
+                    android:textColor="@color/primary_text_color"
+                    android:textColorHint="@color/primary_text_color"
                     android:textSize="@dimen/edit_text_text_size"
                     tools:ignore="SpeakableTextPresentCheck,SpeakableTextPresentCheck"
                     />
@@ -77,8 +77,8 @@
                     android:layout_height="wrap_content"
                     android:hint="@string/description_text"
                     android:inputType="textCapSentences"
-                    android:textColor="@color/secondary_text_color"
-                    android:textColorHint="@color/secondary_text_color"
+                    android:textColor="@color/primary_text_color"
+                    android:textColorHint="@color/primary_text_color"
                     android:textSize="@dimen/edit_text_text_size"
                     tools:ignore="SpeakableTextPresentCheck,SpeakableTextPresentCheck,SpeakableTextPresentCheck" />
             </com.google.android.material.textfield.TextInputLayout>

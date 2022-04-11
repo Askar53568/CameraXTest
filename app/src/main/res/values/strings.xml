@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">LocationApp</string>
+    <string name="app_name"></string>
 
     <string name="name_text">Name</string>
     <string name="location_text">Location</string>
@@ -17,17 +17,17 @@
 
     <string name="add_location_select_current_location_button">SELECT CURRENT LOCATION</string>
     <string name="add_location_image_button">Add Image</string>
-    <string name="no_locations_found">No locations found. Please add one.</string>
+    <string name="no_locations_found">No locations found</string>
     <string name="location_image_description">Image of location</string>
 
     <string name="login_forgot_password">Forgot password?</string>
     <string name="login_not_registered">Not Registered?</string>
-    <string name="login_bg_content_description">Worcester Cathedral Background Image</string>
+    <string name="login_bg_content_description"></string>
     <string name="text_reset_password">Reset Password</string>
     <string name="return_to_login">Return to Login Page</string>
     <string name="nav_bar_sign_out">Sign Out</string>
-    <string name="nav_menu_main_item">PoI List</string>
-    <string name="nav_menu_map_item">Map</string>
+    <string name="nav_menu_main_item">Locations List View</string>
+    <string name="nav_menu_map_item">Locations Map View</string>
     <string name="take_photo">Take Photo</string>
     <string name="toggle_favourites_content_description">Favourites</string>
     <string name="comment_hint">Write your comment here</string>
